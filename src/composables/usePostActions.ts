@@ -14,7 +14,6 @@ export function usePostActions() {
   const modalMessage = ref('');
   const postTitleFilter = ref('');
   const selectedUsers = ref<number[]>([]);
-  const users = ref<{ id: number; name: string }[]>([]);
   const filterFavorites = ref(false);
   // Имитация функции для получения комментариев
   const fetchComments = async (postId: number) => {
@@ -191,15 +190,6 @@ export function usePostActions() {
     }
   };
 
-  const getUserName = (userId: number) => {
-    console.log('fsdfasdfasdfasdfUSER', userId)
-    console.log('usersasfdasdfasdfsaf', users.value)
-    const user = users.value.find((u) => u.id === userId);
-    if (!user) {
-      console.warn(`Пользователь с ID ${userId} не найден`);
-    }
-    return user?.name || "Неизвестный автор";
-  };
 
   return {
     posts,
