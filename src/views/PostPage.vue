@@ -1,0 +1,392 @@
+<template>
+  <div class="posts-app">
+
+    <div class="posts-control">
+      <label class="header-title" for="postTitleFilter">Фильтр по названию поста:</label>
+      <input
+          id="postTitleFilter"
+          v-model="postTitleFilter"
+          @input="updateFilteredPosts"
+          type="text"
+          placeholder="Введите часть названия поста"
+      />
+    </div>
+
+    <div class="posts-control">
+      <label class="header-title" for="perPageSelect">Количество постов на странице:</label>
+      <select id="perPageSelect" v-model.number="perPage" @change="updatePerPage">
+        <option v-for="option in perPageOptions" :key="option" :value="option">
+          {{ option === -1 ? 'Все' : option }}
+        </option>
+      </select>
+    </div>
+
+    <ul class="posts-list">
+      <template v-for="post in displayedPosts" :key="post.id">
+        <li
+            :class="['post-item', { 'favorite-post': favorites.includes(post.id) }]"
+        >
+          <input
+              type="checkbox"
+              :value="post.id"
+              v-model="selectedPosts"
+              class="select-post"
+          />
+
+          <div class="bulk-actions" v-if="selectedPosts.length > 0">
+            <button @click="openModal('delete')">Удалить выбранные</button>
+            <button @click="openModal('favorite')">Добавить в избранное</button>
+          </div>
+
+          <BModal v-model="modalVisible" :title="modalTitle">
+            <p>{{ modalMessage }}</p>
+            <template #footer>
+              <button @click="confirmModalAction">Подтвердить</button>
+              <button @click="cancelModalAction">Отменить</button>
+            </template>
+          </BModal>
+
+
+          <div class="post-header">
+            <h3>{{ post.title }}</h3>
+            <p class="post-user">Автор: {{ getUserName(post.userId) }}</p>
+          </div>
+          <p v-if="editingPostId !== post.id" class="post-body">{{ post.body }}</p>
+          <textarea
+              v-else
+              v-model="editedPost.body"
+              class="edit-body"
+              placeholder="Введите новый текст поста"
+          ></textarea>
+
+          <div class="post-actions">
+            <button @click="showComments(post.id)" title="Комментарии">
+              {{ activeComments === post.id ? 'Скрыть комментарии' : 'Показать комментарии' }}
+            </button>
+
+            <button v-if="editingPostId === post.id" @click="saveEditPost" title="Сохранить изменения">
+              💾 Сохранить
+            </button>
+            <button v-if="editingPostId === post.id" @click="cancelEditPost" title="Отменить">
+              ❌ Отменить
+            </button>
+            <button v-else @click="editPost(post.id)" title="Редактировать">
+              ✏️
+            </button>
+            <button @click="deletePost(post.id)" title="Удалить">
+              🗑️
+            </button>
+            <button
+                @click="toggleFavorite(post.id)"
+                :class="{ favorite: favorites.includes(post.id) }"
+                title="В избранное"
+            >
+              ⭐
+            </button>
+          </div>
+
+          <div v-if="activeComments === post.id" class="comments">
+            <ul>
+              <li class="title-comments" v-for="comment in comments.find((c) => c.postId === post.id)?.comments || []" :key="comment.id">
+                <p><b>{{ comment.name }}</b> ({{ comment.email }})</p>
+                <p>{{ comment.body }}</p>
+              </li>
+            </ul>
+          </div>
+        </li>
+      </template>
+    </ul>
+
+    <div class="pagination-container">
+      <BPagination
+          v-if="perPage !== -1"
+          v-model="currentPage"
+          :total-rows="rows"
+          :per-page="perPage"
+          first-text="First"
+          prev-text="Prev"
+          next-text="Next"
+          last-text="Last"
+      />
+    </div>
+
+    <div class="bulk-actions" v-if="selectedPosts.length > 0">
+      <button @click="handleBulkAction('delete')">Удалить выбранные</button>
+      <button @click="handleBulkAction('favorite')">Добавить в избранное</button>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, onMounted, watch } from "vue";
+import {fetchComments, fetchPosts, fetchUsers} from "@/api/postService.ts";
+import { Post, Comment } from "@/types/postTypes";
+
+const posts = ref<Post[]>([]);
+const users = ref<{ id: number; name: string }[]>([]);
+const comments = ref<Comment[]>([]);
+const favorites = ref<number[]>(JSON.parse(localStorage.getItem("favorites") || "[]"));
+const selectedPosts = ref<number[]>([]);
+const activeComments = ref<number | null>(null);
+const editingPostId = ref<number | null>(null);
+const editedPost = ref<Post | null>(null);
+const currentPage = ref(1);
+const perPage = ref<number>(parseInt(localStorage.getItem("perPage") || "10", 10));
+const perPageOptions = [10, 20, 50, 100, -1];
+const modalVisible = ref(false);
+const modalTitle = ref('');
+const modalMessage = ref('');
+const currentAction = ref<'delete' | 'favorite' | null>(null);
+const postTitleFilter = ref('');
+
+const updateFilteredPosts = () => {
+  filteredPosts.value = posts.value.filter((post) =>
+      post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase())
+  );
+};
+
+const filteredPosts = ref<Post[]>([]);
+
+const displayedPosts = computed(() => {
+  const postsToDisplay = postTitleFilter.value ? filteredPosts.value : posts.value;
+  if (perPage.value === -1) return postsToDisplay;
+  const start = (currentPage.value - 1) * perPage.value;
+  return postsToDisplay.slice(start, start + perPage.value);
+});
+
+const openModal = (action: 'delete' | 'favorite') => {
+  currentAction.value = action;
+
+  if (action === 'delete') {
+    modalTitle.value = 'Удалить выбранные посты';
+    modalMessage.value = `Вы уверены, что хотите удалить ${selectedPosts.value.length} пост(а/ов)?`;
+  } else if (action === 'favorite') {
+    modalTitle.value = 'Добавить в избранное';
+    modalMessage.value = `Вы уверены, что хотите добавить ${selectedPosts.value.length} пост(а/ов) в избранное?`;
+  }
+
+  modalVisible.value = true;
+};
+
+const confirmModalAction = () => {
+  if (currentAction.value === 'delete') {
+    selectedPosts.value.forEach((postId) => {
+      deletePost(postId);
+    });
+    selectedPosts.value = [];
+  } else if (currentAction.value === 'favorite') {
+    selectedPosts.value.forEach((postId) => {
+      if (!favorites.value.includes(postId)) {
+        favorites.value.push(postId);
+      }
+    });
+    localStorage.setItem("favorites", JSON.stringify(favorites.value));
+  }
+
+  modalVisible.value = false;
+};
+
+const cancelModalAction = () => {
+  modalVisible.value = false;
+  currentAction.value = null;
+};
+
+const fetchAllPosts = async () => {
+  posts.value = await fetchPosts();
+};
+
+const fetchAllUsers = async () => {
+  users.value = await fetchUsers();
+};
+
+const getUserName = (userId: number) => users.value.find((u) => u.id === userId)?.name || "Неизвестный автор";
+
+// const displayedPosts = computed(() => {
+//   if (perPage.value === -1) return posts.value;
+//   const start = (currentPage.value - 1) * perPage.value;
+//   return posts.value.slice(start, start + perPage.value);
+// });
+
+const rows = computed(() => posts.value.length);
+
+const updatePerPage = () => {
+  localStorage.setItem("perPage", perPage.value.toString());
+};
+
+const fetchPostComments = async (postId: number) => {
+  const existing = comments.value.find((c) => c.postId === postId);
+  if (!existing) {
+    const postComments = await fetchComments(postId);
+    comments.value.push({ postId, comments: postComments });
+  }
+};
+
+const showComments = async (postId: number) => {
+  if (activeComments.value === postId) {
+    activeComments.value = null;
+  } else {
+    await fetchComments(postId);
+    activeComments.value = postId;
+  }
+};
+
+const editPost = (postId: number) => {
+  const post = posts.value.find((p) => p.id === postId);
+  if (post) {
+    editedPost.value = { ...post };
+    editingPostId.value = postId;
+  }
+};
+
+const saveEditPost = () => {
+  if (editedPost.value) {
+    posts.value = posts.value.map((post) =>
+        post.id === editingPostId.value ? { ...editedPost.value } : post
+    );
+    cancelEditPost();
+  }
+};
+
+const cancelEditPost = () => {
+  editingPostId.value = null;
+  editedPost.value = null;
+};
+
+const deletePost = (postId: number) => {
+  if (window.confirm("Вы уверены, что хотите удалить этот пост?")) {
+    posts.value = posts.value.filter((post) => post.id !== postId);
+  }
+};
+
+const toggleFavorite = (postId: number) => {
+  if (favorites.value.includes(postId)) {
+    favorites.value = favorites.value.filter((id) => id !== postId);
+  } else {
+    favorites.value.push(postId);
+  }
+  localStorage.setItem("favorites", JSON.stringify(favorites.value));
+};
+
+const handleBulkAction = async (action: "delete" | "favorite") => {
+  if (selectedPosts.value.length === 0) return;
+
+  const confirmAction = window.confirm(
+      `Вы уверены, что хотите ${action === "delete" ? "удалить" : "добавить в избранное"} выбранные посты?`
+  );
+
+  if (confirmAction) {
+    selectedPosts.value.forEach((postId) => {
+      if (action === "delete") {
+        deletePost(postId);
+      } else if (action === "favorite" && !favorites.value.includes(postId)) {
+        favorites.value.push(postId);
+      }
+    });
+    selectedPosts.value = [];
+    if (action === "favorite") {
+      localStorage.setItem("favorites", JSON.stringify(favorites.value));
+    }
+  }
+};
+
+onMounted(() => {
+  fetchAllPosts();
+  fetchAllUsers();
+  watch(posts, updateFilteredPosts);
+});
+
+watch(perPage, updatePerPage);
+</script>
+
+<style lang="scss">
+.modal-header {
+  color: black;
+}
+.modal-body {
+  color: black;
+}
+.posts-app {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  border-radius: 10px;
+
+  .header-title {
+    color: black;
+  }
+
+  .posts-list {
+    padding: 0;
+    list-style: none;
+
+    .post-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+
+      .post-header {
+        margin-bottom: 10px;
+
+        h3 {
+          margin: 0;
+          color: #333;
+        }
+
+        .post-user {
+          font-size: 14px;
+          color: #666;
+        }
+      }
+
+      .post-body {
+        margin-bottom: 10px;
+        color: #555;
+      }
+
+      .post-actions {
+        display: flex;
+        gap: 10px;
+
+        button {
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+
+          &.favorite {
+            color: gold;
+          }
+
+          &:hover {
+            color: #007bff;
+          }
+        }
+      }
+
+      .comments {
+        .title-comments {
+          color: black;
+        }
+      }
+
+      .select-post {
+        margin-right: 10px;
+      }
+    }
+  }
+
+  .favorite-post {
+    background-color: gold !important;
+  }
+
+  .bulk-actions {
+    margin-top: 20px;
+  }
+}
+</style>
