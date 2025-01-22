@@ -47,6 +47,24 @@
       </label>
     </div>
 
+    <div class="posts-control">
+      <label class="header-title" for="sortField">Сортировать по:</label>
+      <select id="sortField" v-model="sortField" @change="updateFilteredPosts">
+        <option value="id">ID</option>
+        <option value="title">Название</option>
+        <option value="userName">Имя автора</option>
+        <option value="favorite">Избранное</option>
+      </select>
+    </div>
+
+    <div class="posts-control">
+      <label class="header-title" for="sortDirection">Направление сортировки:</label>
+      <select id="sortDirection" v-model="sortDirection" @change="updateFilteredPosts">
+        <option value="asc">По возрастанию</option>
+        <option value="desc">По убыванию</option>
+      </select>
+    </div>
+
     <ul class="posts-list">
       <template v-for="post in displayedPosts" :key="post.id">
         <li
@@ -148,15 +166,14 @@ import {fetchComments, fetchPosts, fetchUsers} from "@/api/postService.ts";
 import { Post, Comment } from "@/types/postTypes";
 import { usePostActions } from "@/composables/usePostActions";
 
-const {
+let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
   modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite, handleBulkAction,
   editPost, saveEditPost, updatePerPage, confirmModalAction, cancelModalAction, openModal,
-  showComments, getUserName, displayedPosts, updateFilteredPosts, rows, comments, postTitleFilter,
-  selectedUsers, filterFavorites
+  showComments, displayedPosts, updateFilteredPosts, rows, comments, postTitleFilter,
+  selectedUsers, filterFavorites, users, sortField, sortDirection,
 } = usePostActions();
 
-const users = ref<{ id: number; name: string }[]>([]);
 const currentPage = ref(1);
 const perPageOptions = [10, 20, 50, 100, -1];
 
@@ -166,9 +183,16 @@ const fetchAllPosts = async () => {
 };
 
 const fetchAllUsers = async () => {
-  users.value = await fetchUsers();
+  users = await fetchUsers();
 };
 
+const getUserName = (userId: number) => {
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    console.warn(`Пользователь с ID ${userId} не найден`);
+  }
+  return user?.name || "Неизвестный автор";
+};
 
 onMounted(() => {
   fetchAllPosts();

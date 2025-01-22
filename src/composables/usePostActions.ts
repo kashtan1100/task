@@ -129,14 +129,37 @@ export function usePostActions() {
   const currentPage = ref(1);
 
 
-  const updateFilteredPosts = () => {
-    filteredPosts.value = posts.value.filter((post: any) => {
-      const matchesTitle = post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase());
-      const matchesUser = selectedUsers.value.length === 0 || selectedUsers.value.includes(post.userId);
-      const matchesFavorites = !filterFavorites.value || favorites.value.includes(post.id);
-      return matchesTitle && matchesUser && matchesFavorites;
+  const sortField = ref<'id' | 'title' | 'userName' | 'favorite'>('id');
+  const sortDirection = ref<'asc' | 'desc'>('asc');
+
+  const sortPosts = () => {
+
+    filteredPosts.value.sort((a, b) => {
+      let fieldA: any, fieldB: any;
+
+      if (sortField.value === "userName") {
+        fieldA = getUserName(a.userId).toLowerCase();
+        fieldB = getUserName(b.userId).toLowerCase();
+      } else if (sortField.value === "favorite") {
+        fieldA = favorites.value.includes(a.id) ? 1 : 0;
+        fieldB = favorites.value.includes(b.id) ? 1 : 0;
+      } else {
+        fieldA = a[sortField.value];
+        fieldB = b[sortField.value];
+      }
+
+      if (fieldA < fieldB) return sortDirection.value === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection.value === "asc" ? 1 : -1;
+      return 0;
     });
-    currentPage.value = 1; // Сбрасываем на первую страницу
+  };
+
+  const updateFilteredPosts = () => {
+    filteredPosts.value = posts.value.filter((post) => {
+      return post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase());
+    });
+
+    sortPosts(); // Сортировка после фильтрации
   };
 
   const displayedPosts = computed(() => {
@@ -168,8 +191,15 @@ export function usePostActions() {
     }
   };
 
-  const getUserName = (userId: number) =>
-      users.value.find((u) => u.id === userId)?.name || "Неизвестный автор";
+  const getUserName = (userId: number) => {
+    console.log('fsdfasdfasdfasdfUSER', userId)
+    console.log('usersasfdasdfasdfsaf', users.value)
+    const user = users.value.find((u) => u.id === userId);
+    if (!user) {
+      console.warn(`Пользователь с ID ${userId} не найден`);
+    }
+    return user?.name || "Неизвестный автор";
+  };
 
   return {
     posts,
@@ -194,13 +224,14 @@ export function usePostActions() {
     cancelModalAction,
     openModal,
     showComments,
-    getUserName,
     displayedPosts,
     updateFilteredPosts,
     rows,
     comments,
     postTitleFilter,
     selectedUsers,
-    filterFavorites
+    filterFavorites,
+    sortField,
+    sortDirection,
   };
 }
