@@ -42,47 +42,21 @@
             <p class="post-user">Автор оказывается в запросе нет вывожу URL: {{ post.url }}</p>
           </div>
           <p v-if="editingPostId !== post.id" class="post-body">{{ post.body }}</p>
-          <!--        <textarea-->
-          <!--            v-else-->
-          <!--            v-model="editedPost.body"-->
-          <!--            class="edit-body"-->
-          <!--            placeholder="Введите новый текст поста"-->
-          <!--        ></textarea>-->
-
-          <!--        <div class="post-actions">-->
-          <!--          <button @click="showComments(post.id)" title="Комментарии">-->
-          <!--            {{ activeComments === post.id ? 'Скрыть комментарии' : 'Показать комментарии' }}-->
-          <!--          </button>-->
-
-          <!--          <button v-if="editingPostId === post.id" @click="saveEditPost" title="Сохранить изменения">-->
-          <!--            💾 Сохранить-->
-          <!--          </button>-->
-          <!--          <button v-if="editingPostId === post.id" @click="cancelEditPost" title="Отменить">-->
-          <!--            ❌ Отменить-->
-          <!--          </button>-->
-          <!--          <button v-else @click="editPost(post.id)" title="Редактировать">-->
-          <!--            ✏️-->
-          <!--          </button>-->
-          <!--          <button @click="deletePost(post.id)" title="Удалить">-->
-          <!--            🗑️-->
-          <!--          </button>-->
-          <!--          <button-->
-          <!--              @click="toggleFavorite(post.id)"-->
-          <!--              :class="{ favorite: favorites.includes(post.id) }"-->
-          <!--              title="В избранное"-->
-          <!--          >-->
-          <!--            ⭐-->
-          <!--          </button>-->
-          <!--        </div>-->
-
-          <!--        <div v-if="activeComments === post.id" class="comments">-->
-          <!--          <ul>-->
-          <!--            <li class="title-comments" v-for="comment in comments.find((c) => c.postId === post.id)?.comments || []" :key="comment.id">-->
-          <!--              <p><b>{{ comment.name }}</b> ({{ comment.email }})</p>-->
-          <!--              <p>{{ comment.body }}</p>-->
-          <!--            </li>-->
-          <!--          </ul>-->
-          <!--        </div>-->
+          <PostActionsAndComments
+              :post="post"
+              :active-comments="activeComments"
+              :editing-post-id="editingPostId"
+              :favorites="favorites"
+              :post-comments="comments.find((c) => c.postId === post.id)?.comments || []"
+              :edited-body="editedPost?.body"
+              @update-edited-body="(value) => editedPost.body = value"
+              @toggle-comments="showComments"
+              @save-edit="saveEditPost"
+              @cancel-edit="cancelEditPost"
+              @edit-post="editPost"
+              @delete-post="deletePost"
+              @toggle-favorite="toggleFavorite"
+          />
         </li>
       </template>
     </ul>
@@ -93,6 +67,7 @@
 import {usePostActions} from "@/composables/usePostActions.ts";
 import {onMounted, ref, watch} from "vue";
 import {fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
+import PostActionsAndComments from "@/components/ActionsAndComment.vue";
 
 let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
@@ -123,5 +98,64 @@ onMounted(() => {
 .FotoComp {
   width: 100%;
   height: auto;
+
+  .post-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+
+    .post-header {
+      margin-bottom: 10px;
+
+      h3 {
+        margin: 0;
+        color: #333;
+      }
+
+      .post-user {
+        font-size: 14px;
+        color: #666;
+      }
+    }
+
+    .post-body {
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 10px;
+
+      button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+
+        &.favorite {
+          color: gold;
+        }
+
+        &:hover {
+          color: #007bff;
+        }
+      }
+    }
+
+    .comments {
+      .title-comments {
+        color: black;
+      }
+    }
+
+    .select-post {
+      margin-right: 10px;
+    }
+  }
 }
 </style>
