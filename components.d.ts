@@ -7,6 +7,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    BDropdown: typeof import('bootstrap-vue-next/components/BDropdown')['BDropdown']
+    BFormCheckbox: typeof import('bootstrap-vue-next/components/BFormCheckbox')['BFormCheckbox']
     BModal: typeof import('bootstrap-vue-next/components/BModal')['BModal']
     BPagination: typeof import('bootstrap-vue-next/components/BPagination')['BPagination']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']

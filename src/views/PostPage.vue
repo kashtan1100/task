@@ -32,8 +32,7 @@
               v-model="selectedPosts"
               class="select-post"
           />
-
-          <div class="bulk-actions" v-if="selectedPosts.length > 0">
+          <div class="bulk-actions" v-if="selectedPosts.includes(post.id)">
             <button @click="openModal('delete')">Удалить выбранные</button>
             <button @click="openModal('favorite')">Добавить в избранное</button>
           </div>
@@ -121,22 +120,18 @@
 import { ref, computed, onMounted, watch } from "vue";
 import {fetchComments, fetchPosts, fetchUsers} from "@/api/postService.ts";
 import { Post, Comment } from "@/types/postTypes";
+import { usePostActions } from "@/composables/usePostActions";
 
-const posts = ref<Post[]>([]);
+const {
+  posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
+  modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite, handleBulkAction,
+  editPost, saveEditPost, updatePerPage, confirmModalAction, cancelModalAction, openModal,
+} = usePostActions();
+
 const users = ref<{ id: number; name: string }[]>([]);
 const comments = ref<Comment[]>([]);
-const favorites = ref<number[]>(JSON.parse(localStorage.getItem("favorites") || "[]"));
-const selectedPosts = ref<number[]>([]);
-const activeComments = ref<number | null>(null);
-const editingPostId = ref<number | null>(null);
-const editedPost = ref<Post | null>(null);
 const currentPage = ref(1);
-const perPage = ref<number>(parseInt(localStorage.getItem("perPage") || "10", 10));
 const perPageOptions = [10, 20, 50, 100, -1];
-const modalVisible = ref(false);
-const modalTitle = ref('');
-const modalMessage = ref('');
-const currentAction = ref<'delete' | 'favorite' | null>(null);
 const postTitleFilter = ref('');
 
 const updateFilteredPosts = () => {
@@ -154,43 +149,6 @@ const displayedPosts = computed(() => {
   return postsToDisplay.slice(start, start + perPage.value);
 });
 
-const openModal = (action: 'delete' | 'favorite') => {
-  currentAction.value = action;
-
-  if (action === 'delete') {
-    modalTitle.value = 'Удалить выбранные посты';
-    modalMessage.value = `Вы уверены, что хотите удалить ${selectedPosts.value.length} пост(а/ов)?`;
-  } else if (action === 'favorite') {
-    modalTitle.value = 'Добавить в избранное';
-    modalMessage.value = `Вы уверены, что хотите добавить ${selectedPosts.value.length} пост(а/ов) в избранное?`;
-  }
-
-  modalVisible.value = true;
-};
-
-const confirmModalAction = () => {
-  if (currentAction.value === 'delete') {
-    selectedPosts.value.forEach((postId) => {
-      deletePost(postId);
-    });
-    selectedPosts.value = [];
-  } else if (currentAction.value === 'favorite') {
-    selectedPosts.value.forEach((postId) => {
-      if (!favorites.value.includes(postId)) {
-        favorites.value.push(postId);
-      }
-    });
-    localStorage.setItem("favorites", JSON.stringify(favorites.value));
-  }
-
-  modalVisible.value = false;
-};
-
-const cancelModalAction = () => {
-  modalVisible.value = false;
-  currentAction.value = null;
-};
-
 const fetchAllPosts = async () => {
   posts.value = await fetchPosts();
 };
@@ -201,17 +159,8 @@ const fetchAllUsers = async () => {
 
 const getUserName = (userId: number) => users.value.find((u) => u.id === userId)?.name || "Неизвестный автор";
 
-// const displayedPosts = computed(() => {
-//   if (perPage.value === -1) return posts.value;
-//   const start = (currentPage.value - 1) * perPage.value;
-//   return posts.value.slice(start, start + perPage.value);
-// });
-
 const rows = computed(() => posts.value.length);
 
-const updatePerPage = () => {
-  localStorage.setItem("perPage", perPage.value.toString());
-};
 
 const fetchPostComments = async (postId: number) => {
   const existing = comments.value.find((c) => c.postId === postId);
@@ -225,67 +174,8 @@ const showComments = async (postId: number) => {
   if (activeComments.value === postId) {
     activeComments.value = null;
   } else {
-    await fetchComments(postId);
+    await fetchPostComments(postId);
     activeComments.value = postId;
-  }
-};
-
-const editPost = (postId: number) => {
-  const post = posts.value.find((p) => p.id === postId);
-  if (post) {
-    editedPost.value = { ...post };
-    editingPostId.value = postId;
-  }
-};
-
-const saveEditPost = () => {
-  if (editedPost.value) {
-    posts.value = posts.value.map((post) =>
-        post.id === editingPostId.value ? { ...editedPost.value } : post
-    );
-    cancelEditPost();
-  }
-};
-
-const cancelEditPost = () => {
-  editingPostId.value = null;
-  editedPost.value = null;
-};
-
-const deletePost = (postId: number) => {
-  if (window.confirm("Вы уверены, что хотите удалить этот пост?")) {
-    posts.value = posts.value.filter((post) => post.id !== postId);
-  }
-};
-
-const toggleFavorite = (postId: number) => {
-  if (favorites.value.includes(postId)) {
-    favorites.value = favorites.value.filter((id) => id !== postId);
-  } else {
-    favorites.value.push(postId);
-  }
-  localStorage.setItem("favorites", JSON.stringify(favorites.value));
-};
-
-const handleBulkAction = async (action: "delete" | "favorite") => {
-  if (selectedPosts.value.length === 0) return;
-
-  const confirmAction = window.confirm(
-      `Вы уверены, что хотите ${action === "delete" ? "удалить" : "добавить в избранное"} выбранные посты?`
-  );
-
-  if (confirmAction) {
-    selectedPosts.value.forEach((postId) => {
-      if (action === "delete") {
-        deletePost(postId);
-      } else if (action === "favorite" && !favorites.value.includes(postId)) {
-        favorites.value.push(postId);
-      }
-    });
-    selectedPosts.value = [];
-    if (action === "favorite") {
-      localStorage.setItem("favorites", JSON.stringify(favorites.value));
-    }
   }
 };
 
