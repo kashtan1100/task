@@ -200,7 +200,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch } from "vue";
-import {fetchComments, fetchPosts, fetchUsers} from "@/api/postService.ts";
+import {fetchComments, fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
 import { Post, Comment } from "@/types/postTypes";
 import { usePostActions } from "@/composables/usePostActions";
 
@@ -208,8 +208,8 @@ let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
   modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite, handleBulkAction,
   editPost, saveEditPost, updatePerPage, confirmModalAction, cancelModalAction, openModal,
-  showComments, displayedPosts, updateFilteredPosts, rows, comments, postTitleFilter,
-  selectedUsers, filterFavorites, sortField, sortDirection,
+  showComments, rows, comments, postTitleFilter, displayedPosts,
+  selectedUsers, filterFavorites, updateFilteredPosts, sortField, sortDirection,
 } = usePostActions();
 
 const currentPage = ref(1);
@@ -217,7 +217,7 @@ const perPageOptions = [10, 20, 50, 100, -1];
 const users = ref<{ id: number; name: string }[]>([]);
 
 const fetchAllPosts = async () => {
-  posts.value = await fetchPosts();
+  posts.value = await fetchPostsPhoto<Post>("posts");
 };
 
 const fetchAllUsers = async () => {

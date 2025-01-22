@@ -132,7 +132,6 @@ export function usePostActions() {
   const sortDirection = ref<'asc' | 'desc'>('asc');
 
   const sortPosts = () => {
-
     filteredPosts.value.sort((a, b) => {
       let fieldA: any, fieldB: any;
 
@@ -146,7 +145,6 @@ export function usePostActions() {
         fieldA = a[sortField.value];
         fieldB = b[sortField.value];
       }
-
       if (fieldA < fieldB) return sortDirection.value === "asc" ? -1 : 1;
       if (fieldA > fieldB) return sortDirection.value === "asc" ? 1 : -1;
       return 0;
@@ -155,7 +153,17 @@ export function usePostActions() {
 
   const updateFilteredPosts = () => {
     filteredPosts.value = posts.value.filter((post) => {
-      return post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase());
+      // Фильтр по названию поста
+      const matchesTitle = post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase());
+
+      // Фильтр по имени пользователя
+      const matchesUser =
+          selectedUsers.value.length === 0 || selectedUsers.value.includes(post.userId);
+
+      // Фильтр по избранному
+      const matchesFavorite = !filterFavorites.value || favorites.value.includes(post.id);
+
+      return matchesTitle && matchesUser && matchesFavorite;
     });
 
     sortPosts(); // Сортировка после фильтрации
@@ -190,6 +198,14 @@ export function usePostActions() {
     }
   };
 
+  const users = ref<{ id: number; name: string }[]>([]);
+  const getUserName = (userId: number) => {
+    const user = users.value.find((u) => u.id === userId);
+    if (!user) {
+      console.warn(`Пользователь с ID ${userId} не найден`);
+    }
+    return user?.name || "Неизвестный автор";
+  };
 
   return {
     posts,

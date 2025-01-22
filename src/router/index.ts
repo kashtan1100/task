@@ -14,11 +14,11 @@ const router = createRouter({
           name: 'Posts', // Уникальное имя для дочернего маршрута
           component: () => import('@/views/PostPage.vue'),
         },
-        // {
-        //   path: 'foto',
-        //   name: 'Foto',
-        //   component: () => import('@/components/views/WeekContent.vue'),
-        // },
+        {
+          path: '/photo',
+          name: 'Photo',
+          component: () => import('@/views/FotoComp.vue'),
+        },
         // {
         //   path: 'task',
         //   name: 'Task',
