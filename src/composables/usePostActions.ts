@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import {computed, ref} from "vue";
 
 export function usePostActions() {
   const posts = ref([]);
@@ -12,7 +12,10 @@ export function usePostActions() {
   const currentAction = ref<'delete' | 'favorite' | null>(null);
   const modalTitle = ref('');
   const modalMessage = ref('');
-
+  const postTitleFilter = ref('');
+  const selectedUsers = ref<number[]>([]);
+  const users = ref<{ id: number; name: string }[]>([]);
+  const filterFavorites = ref(false);
   // Имитация функции для получения комментариев
   const fetchComments = async (postId: number) => {
     console.log(`Fetching comments for post ${postId}`);
@@ -121,6 +124,53 @@ export function usePostActions() {
     modalVisible.value = true;
   };
 
+  const comments = ref<{ postId: number; comments: any[] }[]>([]);
+  const filteredPosts = ref([]);
+  const currentPage = ref(1);
+
+
+  const updateFilteredPosts = () => {
+    filteredPosts.value = posts.value.filter((post: any) => {
+      const matchesTitle = post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase());
+      const matchesUser = selectedUsers.value.length === 0 || selectedUsers.value.includes(post.userId);
+      const matchesFavorites = !filterFavorites.value || favorites.value.includes(post.id);
+      return matchesTitle && matchesUser && matchesFavorites;
+    });
+    currentPage.value = 1; // Сбрасываем на первую страницу
+  };
+
+  const displayedPosts = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value;
+    const end = start + perPage.value;
+
+    if (perPage.value === -1) {
+      return filteredPosts.value;
+    }
+    return filteredPosts.value.slice(start, end);
+  });
+
+  const rows = computed(() => filteredPosts.value.length);
+
+  const fetchPostComments = async (postId: number) => {
+    const existing = comments.value.find((c) => c.postId === postId);
+    if (!existing) {
+      const postComments = await fetchComments(postId);
+      comments.value.push({ postId, comments: postComments });
+    }
+  };
+
+  const showComments = async (postId: number) => {
+    if (activeComments.value === postId) {
+      activeComments.value = null;
+    } else {
+      await fetchPostComments(postId);
+      activeComments.value = postId;
+    }
+  };
+
+  const getUserName = (userId: number) =>
+      users.value.find((u) => u.id === userId)?.name || "Неизвестный автор";
+
   return {
     posts,
     favorites,
@@ -143,5 +193,14 @@ export function usePostActions() {
     confirmModalAction,
     cancelModalAction,
     openModal,
+    showComments,
+    getUserName,
+    displayedPosts,
+    updateFilteredPosts,
+    rows,
+    comments,
+    postTitleFilter,
+    selectedUsers,
+    filterFavorites
   };
 }

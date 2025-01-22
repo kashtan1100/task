@@ -21,6 +21,32 @@
       </select>
     </div>
 
+    <div class="posts-control">
+      <label class="header-title">Фильтр по имени пользователя:</label>
+      <BDropdown  text="Выберите автора" auto-close="outside">
+        <template #default>
+          <div v-for="user in users" :key="user.id" class="dropdown-item">
+            <BFormCheckbox
+                :value="user.id"
+                v-model="selectedUsers"
+                @change="updateFilteredPosts"
+            >
+              {{ user.name }}
+            </BFormCheckbox>
+          </div>
+        </template>
+      </BDropdown>
+    </div>
+
+    <!-- Фильтр по избранным -->
+    <div class="posts-control">
+      <label class="header-title">
+        <BFormCheckbox v-model="filterFavorites" @change="updateFilteredPosts">
+          Только избранные
+        </BFormCheckbox>
+      </label>
+    </div>
+
     <ul class="posts-list">
       <template v-for="post in displayedPosts" :key="post.id">
         <li
@@ -126,28 +152,14 @@ const {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
   modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite, handleBulkAction,
   editPost, saveEditPost, updatePerPage, confirmModalAction, cancelModalAction, openModal,
+  showComments, getUserName, displayedPosts, updateFilteredPosts, rows, comments, postTitleFilter,
+  selectedUsers, filterFavorites
 } = usePostActions();
 
 const users = ref<{ id: number; name: string }[]>([]);
-const comments = ref<Comment[]>([]);
 const currentPage = ref(1);
 const perPageOptions = [10, 20, 50, 100, -1];
-const postTitleFilter = ref('');
 
-const updateFilteredPosts = () => {
-  filteredPosts.value = posts.value.filter((post) =>
-      post.title.toLowerCase().includes(postTitleFilter.value.toLowerCase())
-  );
-};
-
-const filteredPosts = ref<Post[]>([]);
-
-const displayedPosts = computed(() => {
-  const postsToDisplay = postTitleFilter.value ? filteredPosts.value : posts.value;
-  if (perPage.value === -1) return postsToDisplay;
-  const start = (currentPage.value - 1) * perPage.value;
-  return postsToDisplay.slice(start, start + perPage.value);
-});
 
 const fetchAllPosts = async () => {
   posts.value = await fetchPosts();
@@ -157,27 +169,6 @@ const fetchAllUsers = async () => {
   users.value = await fetchUsers();
 };
 
-const getUserName = (userId: number) => users.value.find((u) => u.id === userId)?.name || "Неизвестный автор";
-
-const rows = computed(() => posts.value.length);
-
-
-const fetchPostComments = async (postId: number) => {
-  const existing = comments.value.find((c) => c.postId === postId);
-  if (!existing) {
-    const postComments = await fetchComments(postId);
-    comments.value.push({ postId, comments: postComments });
-  }
-};
-
-const showComments = async (postId: number) => {
-  if (activeComments.value === postId) {
-    activeComments.value = null;
-  } else {
-    await fetchPostComments(postId);
-    activeComments.value = postId;
-  }
-};
 
 onMounted(() => {
   fetchAllPosts();
