@@ -1,4 +1,5 @@
 import {computed, ref} from "vue";
+import {fetchComments} from "@/api/postService.ts";
 
 export function usePostActions() {
   const posts = ref([]);
@@ -15,11 +16,6 @@ export function usePostActions() {
   const postTitleFilter = ref('');
   const selectedUsers = ref<number[]>([]);
   const filterFavorites = ref(false);
-  // Имитация функции для получения комментариев
-  const fetchComments = async (postId: number) => {
-    console.log(`Fetching comments for post ${postId}`);
-    return new Promise((resolve) => setTimeout(resolve, 500));
-  };
 
   const cancelEditPost = () => {
     editingPostId.value = null;

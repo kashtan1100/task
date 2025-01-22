@@ -133,47 +133,28 @@
             <p class="post-user">Автор: {{ getUserName(post.userId) }}</p>
           </div>
           <p v-if="editingPostId !== post.id" class="post-body">{{ post.body }}</p>
-          <textarea
-              v-else
-              v-model="editedPost.body"
-              class="edit-body"
-              placeholder="Введите новый текст поста"
-          ></textarea>
+<!--          <textarea-->
+<!--              v-else-->
+<!--              v-model="editedPost.body"-->
+<!--              class="edit-body"-->
+<!--              placeholder="Введите новый текст поста"-->
+<!--          ></textarea>-->
 
-          <div class="post-actions">
-            <button @click="showComments(post.id)" title="Комментарии">
-              {{ activeComments === post.id ? 'Скрыть комментарии' : 'Показать комментарии' }}
-            </button>
-
-            <button v-if="editingPostId === post.id" @click="saveEditPost" title="Сохранить изменения">
-              💾 Сохранить
-            </button>
-            <button v-if="editingPostId === post.id" @click="cancelEditPost" title="Отменить">
-              ❌ Отменить
-            </button>
-            <button v-else @click="editPost(post.id)" title="Редактировать">
-              ✏️
-            </button>
-            <button @click="deletePost(post.id)" title="Удалить">
-              🗑️
-            </button>
-            <button
-                @click="toggleFavorite(post.id)"
-                :class="{ favorite: favorites.includes(post.id) }"
-                title="В избранное"
-            >
-              ⭐
-            </button>
-          </div>
-
-          <div v-if="activeComments === post.id" class="comments">
-            <ul>
-              <li class="title-comments" v-for="comment in comments.find((c) => c.postId === post.id)?.comments || []" :key="comment.id">
-                <p><b>{{ comment.name }}</b> ({{ comment.email }})</p>
-                <p>{{ comment.body }}</p>
-              </li>
-            </ul>
-          </div>
+          <PostActionsAndComments
+              :post="post"
+              :active-comments="activeComments"
+              :editing-post-id="editingPostId"
+              :favorites="favorites"
+              :post-comments="comments.find((c) => c.postId === post.id)?.comments || []"
+              :edited-body="editedPost?.body"
+              @update-edited-body="(value) => editedPost.body = value"
+              @toggle-comments="showComments"
+              @save-edit="saveEditPost"
+              @cancel-edit="cancelEditPost"
+              @edit-post="editPost"
+              @delete-post="deletePost"
+              @toggle-favorite="toggleFavorite"
+          />
         </li>
       </template>
     </ul>
@@ -203,6 +184,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import {fetchComments, fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
 import { Post, Comment } from "@/types/postTypes";
 import { usePostActions } from "@/composables/usePostActions";
+import PostActionsAndComments from "@/components/ActionsAndComment.vue";
 
 let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
