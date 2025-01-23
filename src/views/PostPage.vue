@@ -59,49 +59,15 @@
       </select>
     </div>
 
-    <div class="posts-control">
-      <label class="header-title">Фильтр по имени пользователя:</label>
-      <BDropdown  text="Выберите автора" auto-close="outside">
-        <template #default>
-          <div v-for="user in users" :key="user.id" class="dropdown-item">
-            <BFormCheckbox
-                :value="user.id"
-                v-model="selectedUsers"
-                @change="updateFilteredPosts"
-            >
-              {{ user.name }}
-            </BFormCheckbox>
-          </div>
-        </template>
-      </BDropdown>
-    </div>
-
-    <!-- Фильтр по избранным -->
-    <div class="posts-control">
-      <label class="header-title">
-        <BFormCheckbox v-model="filterFavorites" @change="updateFilteredPosts">
-          Только избранные
-        </BFormCheckbox>
-      </label>
-    </div>
-
-    <div class="posts-control">
-      <label class="header-title" for="sortField">Сортировать по:</label>
-      <select id="sortField" v-model="sortField" @change="updateFilteredPosts">
-        <option value="id">ID</option>
-        <option value="title">Название</option>
-        <option value="userName">Имя автора</option>
-        <option value="favorite">Избранное</option>
-      </select>
-    </div>
-
-    <div class="posts-control">
-      <label class="header-title" for="sortDirection">Направление сортировки:</label>
-      <select id="sortDirection" v-model="sortDirection" @change="updateFilteredPosts">
-        <option value="asc">По возрастанию</option>
-        <option value="desc">По убыванию</option>
-      </select>
-    </div>
+    <Filter
+        :perPageOptions="perPageOptions"
+        :users="users"
+        @update-per-page="updatePerPage"
+        @update-selected-users="updateSelectedUsers"
+        @update-filter-favorites="updateFilterFavorites"
+        @update-sort-field="updateSortField"
+        @update-sort-direction="updateSortDirection"
+    />
 
     <ul class="posts-list">
       <template v-for="post in displayedPosts" :key="post.id">
@@ -180,8 +146,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from "vue";
-import {fetchComments, fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
+import { ref, onMounted, watch } from "vue";
+import {fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
 import { Post, Comment } from "@/types/postTypes";
 import { usePostActions } from "@/composables/usePostActions";
 import PostActionsAndComments from "@/components/ActionsAndComment.vue";
@@ -197,6 +163,30 @@ let {
 const currentPage = ref(1);
 const perPageOptions = [10, 20, 50, 100, -1];
 const users = ref<{ id: number; name: string }[]>([]);
+
+const updateSelectedUsers = (userId) => {
+  if (selectedUsers.value.includes(userId)) {
+    selectedUsers.value = selectedUsers.value.filter((id) => id !== userId);
+  } else {
+    selectedUsers.value.push(userId);
+  }
+  updateFilteredPosts();
+};
+
+const updateFilterFavorites = (value) => {
+  filterFavorites.value = value;
+  updateFilteredPosts();
+};
+
+const updateSortField = (value) => {
+  sortField.value = value;
+  updateFilteredPosts();
+};
+
+const updateSortDirection = (value) => {
+  sortDirection.value = value;
+  updateFilteredPosts();
+};
 
 const fetchAllPosts = async () => {
   posts.value = await fetchPostsPhoto<Post>("posts");

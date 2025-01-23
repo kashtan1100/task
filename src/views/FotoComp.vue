@@ -1,5 +1,5 @@
 <template>
-  <!--  TODO половина верстки повторяется эт плохо!!!-->
+  <!--  TODO половина верстки повторяется эт плохо, потом исправить!!!-->
 
   <div class="FotoComp">
 
@@ -12,36 +12,45 @@
       </select>
     </div>
 
+    <Filter
+        :perPageOptions="perPageOptions"
+        :users="users"
+        @update-per-page="updatePerPage"
+        @update-selected-users="updateSelectedUsers"
+        @update-filter-favorites="updateFilterFavorites"
+        @update-sort-field="updateSortField"
+        @update-sort-direction="updateSortDirection"
+    />
+
     <ul class="posts-list">
       <template v-for="post in displayedPosts" :key="post.id">
         <li
             :class="['post-item', { 'favorite-post': favorites.includes(post.id) }]"
         >
-          <!--        <input-->
-          <!--            type="checkbox"-->
-          <!--            :value="post.id"-->
-          <!--            v-model="selectedPosts"-->
-          <!--            class="select-post"-->
-          <!--        />-->
-          <!--        <div class="bulk-actions" v-if="selectedPosts.includes(post.id)">-->
-          <!--          <button @click="openModal('delete')">Удалить выбранные</button>-->
-          <!--          <button @click="openModal('favorite')">Добавить в избранное</button>-->
-          <!--        </div>-->
+                  <input
+                      type="checkbox"
+                      :value="post.id"
+                      v-model="selectedPosts"
+                      class="select-post"
+                  />
+                  <div class="bulk-actions" v-if="selectedPosts.includes(post.id)">
+                    <button @click="openModal('delete')">Удалить выбранные</button>
+                    <button @click="openModal('favorite')">Добавить в избранное</button>
+                  </div>
 
-          <!--        <BModal v-model="modalVisible" :title="modalTitle">-->
-          <!--          <p>{{ modalMessage }}</p>-->
-          <!--          <template #footer>-->
-          <!--            <button @click="confirmModalAction">Подтвердить</button>-->
-          <!--            <button @click="cancelModalAction">Отменить</button>-->
-          <!--          </template>-->
-          <!--        </BModal>-->
+                  <BModal v-model="modalVisible" :title="modalTitle">
+                    <p>{{ modalMessage }}</p>
+                    <template #footer>
+                      <button @click="confirmModalAction">Подтвердить</button>
+                      <button @click="cancelModalAction">Отменить</button>
+                    </template>
+                  </BModal>
 
 
           <div class="post-header">
             <h3>{{ post.title }}</h3>
             <p class="post-user">Автор оказывается в запросе нет вывожу URL: {{ post.url }}</p>
           </div>
-          <p v-if="editingPostId !== post.id" class="post-body">{{ post.body }}</p>
           <PostActionsAndComments
               :post="post"
               :active-comments="activeComments"
@@ -68,6 +77,7 @@ import {usePostActions} from "@/composables/usePostActions.ts";
 import {onMounted, ref, watch} from "vue";
 import {fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
 import PostActionsAndComments from "@/components/ActionsAndComment.vue";
+import Filter from "@/components/Filter.vue";
 
 let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
@@ -82,6 +92,30 @@ const perPageOptions = [10, 20, 50, 100, -1];
 
 const fetchAllPhoto = async () => {
   posts.value = await fetchPostsPhoto("photos");
+};
+
+const updateSelectedUsers = (userId) => {
+  if (selectedUsers.value.includes(userId)) {
+    selectedUsers.value = selectedUsers.value.filter((id) => id !== userId);
+  } else {
+    selectedUsers.value.push(userId);
+  }
+  updateFilteredPosts();
+};
+
+const updateFilterFavorites = (value) => {
+  filterFavorites.value = value;
+  updateFilteredPosts();
+};
+
+const updateSortField = (value) => {
+  sortField.value = value;
+  updateFilteredPosts();
+};
+
+const updateSortDirection = (value) => {
+  sortDirection.value = value;
+  updateFilteredPosts();
 };
 
 const fetchAllUsers = async () => {
@@ -156,6 +190,9 @@ onMounted(() => {
     .select-post {
       margin-right: 10px;
     }
+  }
+  .favorite-post {
+    background-color: gold !important;
   }
 }
 </style>

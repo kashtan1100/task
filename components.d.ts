@@ -12,6 +12,8 @@ declare module 'vue' {
     BFormCheckbox: typeof import('bootstrap-vue-next/components/BFormCheckbox')['BFormCheckbox']
     BModal: typeof import('bootstrap-vue-next/components/BModal')['BModal']
     BPagination: typeof import('bootstrap-vue-next/components/BPagination')['BPagination']
+    Filter: typeof import('./src/components/Filter.vue')['default']
+    FilterComponent: typeof import('./src/components/FilterComponent.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     IconCommunity: typeof import('./src/components/icons/IconCommunity.vue')['default']
     IconDocumentation: typeof import('./src/components/icons/IconDocumentation.vue')['default']

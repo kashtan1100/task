@@ -23,9 +23,9 @@ export function usePostActions() {
   };
 
   const deletePost = (postId: number) => {
-    if (window.confirm("Вы уверены, что хотите удалить этот пост?")) {
+    // if (window.confirm("Вы уверены, что хотите удалить этот пост?")) {
       posts.value = posts.value.filter((post) => post.id !== postId);
-    }
+    // }
   };
 
   const toggleFavorite = (postId: number) => {
