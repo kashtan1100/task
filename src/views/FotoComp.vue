@@ -27,28 +27,28 @@
         <li
             :class="['post-item', { 'favorite-post': favorites.includes(post.id) }]"
         >
-                  <input
-                      type="checkbox"
-                      :value="post.id"
-                      v-model="selectedPosts"
-                      class="select-post"
-                  />
-                  <div class="bulk-actions" v-if="selectedPosts.includes(post.id)">
-                    <button @click="openModal('delete')">Удалить выбранные</button>
-                    <button @click="openModal('favorite')">Добавить в избранное</button>
-                  </div>
+          <input
+              type="checkbox"
+              :value="post.id"
+              v-model="selectedPosts"
+              class="select-post"
+          />
+          <div class="bulk-actions" v-if="selectedPosts.includes(post.id)">
+            <button @click="openModal('delete')">Удалить выбранные</button>
+            <button @click="openModal('favorite')">Добавить в избранное</button>
+          </div>
 
-                  <BModal v-model="modalVisible" :title="modalTitle">
-                    <p>{{ modalMessage }}</p>
-                    <template #footer>
-                      <button @click="confirmModalAction">Подтвердить</button>
-                      <button @click="cancelModalAction">Отменить</button>
-                    </template>
-                  </BModal>
+          <BModal v-model="modalVisible" :title="modalTitle">
+            <p>{{ modalMessage }}</p>
+            <template #footer>
+              <button @click="confirmModalAction">Подтвердить</button>
+              <button @click="cancelModalAction">Отменить</button>
+            </template>
+          </BModal>
 
 
           <div class="post-header">
-            <h3>{{ post.title }}</h3>
+            <h3  @click="viewAlbum(post)">{{ post.title }}</h3>
             <p class="post-user">Автор оказывается в запросе нет вывожу URL: {{ post.url }}</p>
           </div>
           <PostActionsAndComments
@@ -69,6 +69,12 @@
         </li>
       </template>
     </ul>
+    <AlbumView
+        v-if="currentAlbum"
+        :album-id="currentAlbum.id"
+        :album-title="currentAlbum.title"
+        @close="currentAlbum = null"
+    />
   </div>
 </template>
 
@@ -78,6 +84,7 @@ import {onMounted, ref, watch} from "vue";
 import {fetchPostsPhoto, fetchUsers} from "@/api/postService.ts";
 import PostActionsAndComments from "@/components/ActionsAndComment.vue";
 import Filter from "@/components/Filter.vue";
+import AlbumView from "@/views/AlbumView.vue";
 
 let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
@@ -89,6 +96,15 @@ let {
 
 const users = ref<{ id: number; name: string }[]>([]);
 const perPageOptions = [10, 20, 50, 100, -1];
+
+const currentAlbum = ref(null);
+
+const viewAlbum = (album) => {
+  currentAlbum.value = {
+    id: album.id,
+    title: album.title,
+  };
+};
 
 const fetchAllPhoto = async () => {
   posts.value = await fetchPostsPhoto("photos");
@@ -191,6 +207,7 @@ onMounted(() => {
       margin-right: 10px;
     }
   }
+
   .favorite-post {
     background-color: gold !important;
   }
