@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ActionsAndComment: typeof import('./src/components/ActionsAndComment.vue')['default']
+    BButton: typeof import('bootstrap-vue-next/components/BButton')['BButton']
     BDropdown: typeof import('bootstrap-vue-next/components/BDropdown')['BDropdown']
     BFormCheckbox: typeof import('bootstrap-vue-next/components/BFormCheckbox')['BFormCheckbox']
     BModal: typeof import('bootstrap-vue-next/components/BModal')['BModal']
