@@ -9,8 +9,10 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "deploy": "gh-pages -d dist"
   },
+  "homepage": "https://<kashtan1100>.github.io/<task>",
   "dependencies": {
     "pinia": "^2.3.1",
     "vue": "^3.5.13",
@@ -24,14 +26,15 @@
     "@vitejs/plugin-vue-jsx": "^4.1.1",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
+    "gh-pages": "^6.3.0",
     "jsdom": "^26.0.0",
     "npm-run-all2": "^7.0.2",
+    "sass-embedded": "^1.81.0",
     "typescript": "~5.7.3",
+    "unplugin-vue-components": "^0.27.4",
     "vite": "^6.0.11",
     "vite-plugin-vue-devtools": "^7.7.0",
-    "unplugin-vue-components": "^0.27.4",
     "vitest": "^3.0.2",
-    "vue-tsc": "^2.2.0",
-    "sass-embedded": "^1.81.0"
+    "vue-tsc": "^2.2.0"
   }
 }
