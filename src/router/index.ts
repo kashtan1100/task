@@ -19,11 +19,11 @@ const router = createRouter({
           name: 'Photo',
           component: () => import('@/views/FotoComp.vue'),
         },
-        // {
-        //   path: 'task',
-        //   name: 'Task',
-        //   component: () => import('@/components/views/WeekContent.vue'),
-        // },
+        {
+          path: 'task',
+          name: 'Task',
+          component: () => import('@/views/Task.vue'),
+        },
       ],
     },
     {

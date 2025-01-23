@@ -17,7 +17,7 @@
 const links = [
     { name: 'Posts', route: '/', label: 'Посты' },
     { name: 'Photo', route: '/photo', label: 'Фото' },
-    { name: 'Tasks', route: '/task', label: 'Задачи' },
+    { name: 'Task', route: '/task', label: 'Задачи' },
 ];
 </script>
 

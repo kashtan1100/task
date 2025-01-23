@@ -88,9 +88,9 @@ import AlbumView from "@/views/AlbumView.vue";
 
 let {
   posts, favorites, selectedPosts, editingPostId, editedPost, activeComments, perPage, modalVisible,
-  modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite, handleBulkAction,
+  modalTitle, modalMessage, cancelEditPost, deletePost, toggleFavorite,
   editPost, saveEditPost, updatePerPage, confirmModalAction, cancelModalAction, openModal,
-  showComments, displayedPosts, updateFilteredPosts, rows, comments, postTitleFilter,
+  showComments, displayedPosts, updateFilteredPosts, comments,
   selectedUsers, filterFavorites, sortField, sortDirection,
 } = usePostActions();
 
